@@ -49,3 +49,9 @@ resource "twc_ssh_key" "harbor_ssh_key" {
   name       = "harbor-key"
   body = file("~/.ssh/id_ed25519.pub")
 }
+
+resource "local_file" "harbor_ip" {
+  filename = "server_ip.txt"
+  content  = twc_server_ip.ip_addr.ip
+  file_permission = "0644"
+}

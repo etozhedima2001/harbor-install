@@ -1,0 +1,25 @@
+-
+  name: install harbor
+  hosts: harbor-server
+  become: true
+  tasks:
+    -
+      name: download tar
+      ansible.builtin.get_url:
+        url: "https://github.com/goharbor/harbor/releases/download/v2.13.2/harbor-offline-installer-v2.13.2.tgz"
+        dest: "/tmp"
+    -
+      name: unzip tar
+      ansible.builtin.unarchive:
+        src: "/tmp/harbor-offline-installer-v2.13.2.tgz"
+        dest: "/tmp"
+        remote_src: yes
+
+    -
+      name: delete tar
+      ansible.builtin.file:
+        path: "/tmp/harbor-offline-installer-v2.13.2.tgz"
+        state: absent
+
+        
+        
