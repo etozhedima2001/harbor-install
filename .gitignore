@@ -1,0 +1,17 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+*.tfvars
+*.tfvars.json
+crash.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+server_ip.txt
+inventory.yml
