@@ -1,0 +1,218 @@
+-
+  name: disable ipv6
+  hosts: all
+  become: true
+  tasks:
+    -
+      name: disable ipv6 ubuntu/debian
+      ansible.builtin.lineinfile:
+        path: /etc/default/grub
+        regexp: '^GRUB_CMDLINE_LINUX='
+        line: 'GRUB_CMDLINE_LINUX="ipv6.disable=1 {{ grub_cmdline_linux | default("") }}"'
+        backup: yes
+      when: ansible_os_family == 'Debian'
+    
+    -
+      name: update grub configuration
+      command: update-grub
+      when: ansible_os_family == 'Debian'
+
+-
+  name: configure ssh daemon
+  hosts: all
+  become: true
+  tasks:
+    -
+      name: change ssh port
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Port\s+'
+        line: 'Port 1871'
+        state: present
+        backup: yes
+
+    -
+      name: enabe publick key authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PubkeyAuthentication\s+'
+        line: 'PubkeyAuthentication yes'
+        state: present
+
+    -
+      name: disable empty passwords
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitEmptyPasswords\s+'
+        line: 'PermitEmptyPasswords no'
+        state: present
+
+    -
+      name: disable password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication\s+'
+        line: 'PasswordAuthentication no'
+        state: present
+
+    -
+      name: restart ssh service
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+        enabled: yes
+
+-
+  name: configure iptables on ca
+  hosts: ca-server
+  become: true
+  tasks:
+    -
+      name: check iptables
+      ansible.builtin.apt:
+        name: iptables
+        state: enabled
+
+    -
+      name: allow output on lo
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        out_interface: lo
+        jump: ACCEPT
+        comment: "allow all outgoing loopback traffic"
+        state: present
+
+    -
+      name: allow input on lo
+      ansible.builtin.iptables:
+        chain: INPUT
+        in_interface: lo
+        jump: ACCEPT
+        comment: "allow all incoming loopback traffic"
+        state: present
+
+    -
+      name: allow dns
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 53
+        jump: ACCEPT
+        comment: "allow dns upd"
+
+    -
+      name: allow dns
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: tcp
+        destination_port: 53
+        jump: ACCEPT
+        comment: "allow dns tcp"
+
+    -
+      name: allow outgoing http
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: tcp
+        destination_port: 80
+        jump: ACCEPT
+        comment: "allow http"
+
+    -
+      name: allow outgoing https
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: tcp
+        destination_port: 443
+        jump: ACCEPT
+        comment: "allow https"
+
+    -
+      name: allow outgoing ntp
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: udp
+        destination_port: 123
+        jump: ACCEPT
+        comment: "allow ntp"
+
+    -
+      name: allow ssh
+      ansible.builtin.iptables:
+        chain: INPUT
+        protocol: tcp
+        destination_port: 1871
+        jump: ACCEPT
+        comment: "allow ssh"
+        state: present
+
+    -
+      name: allow ping icmp
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        protocol: icmp
+        icmp_type: "echo-request"
+        jump: ACCEPT
+        comment: "allow ping"
+
+    -
+      name: allow established, related connections (input)
+      ansible.builtin.iptables:
+        chain: INPUT
+        ctstate:
+          - ESTABLISHED
+          - RELATED
+        jump: ACCEPT
+        comment: "allow established/related incoming connections"
+
+    -
+      name: allow established, related connections (output)
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        ctstate:
+          - ESTABLISHED
+          - RELATED
+        jump: ACCEPT
+        comment: "allow established/related outgoing connections"
+
+    -
+      name: drop invalid packets (input)
+      ansible.builtin.iptables:
+        chain: INPUT
+        ctstate:
+          - INVALID
+        jump: DROP
+        comment: "block invalid incoming packets"
+
+    -
+      name: drop invalid packets (output)
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        ctstate:
+          - INVALID
+        jump: DROP
+        comment: "block invalid outgoing packets"
+
+    -
+      name: set input policy to DROP
+      ansible.builtin.iptables:
+        chain: INPUT
+        policy: DROP
+
+    -
+      name: set output policy to DROP
+      ansible.builtin.iptables:
+        chain: OUTPUT
+        policy: DROP
+
+    -
+      name: set forward policy to DROP
+      ansible.builtin.iptables:
+        chain: FORWARD
+        policy: DROP
+
+    -
+      name: save iptables rules
+      community.general.iptables_state:
+        state: saved
+        path: /etc/sysconfig/iptables
