@@ -1,19 +1,3 @@
-data "twc_presets" "example-preset" {
-  price_filter {
-    from = 300
-    to = 400
-  }
-}
-
-data "twc_configurator" "example-configurator" {
-  location = "ru-1"
-}
-
-data "twc_os" "example-os" {
-  name = "ubuntu"
-  version = "22.04"
-}
-
 resource "twc_vpc" "example-vpc" {
   name = "harbor_vpc"
   description = "Some example VPC"
@@ -39,7 +23,7 @@ resource "twc_server" "harbor_server" {
   ssh_keys_ids = [twc_ssh_key.harbor_ssh_key.id]
 }
 
-resource "twc_server_ip" "ip_addr" {
+resource "twc_server_ip" "harbor_ip_addr" {
   source_server_id = twc_server.harbor_server.id
 
   type = "ipv4"
@@ -51,7 +35,7 @@ resource "twc_ssh_key" "harbor_ssh_key" {
 }
 
 resource "local_file" "harbor_ip" {
-  filename = "server_ip.txt"
-  content  = twc_server_ip.ip_addr.ip
+  filename = "harbor_server_ip.txt"
+  content  = twc_server_ip.harbor_ip_addr.ip
   file_permission = "0644"
 }
