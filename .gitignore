@@ -13,5 +13,6 @@ crash.log
 .vscode/
 *.swp
 
-server_ip.txt
+harbor_server_ip.txt
+ca_server_ip.txt
 inventory.yml
