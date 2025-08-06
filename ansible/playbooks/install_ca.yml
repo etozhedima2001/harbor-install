@@ -1,0 +1,102 @@
+-
+  name: install cert server
+  hosts: ca-server
+  become: true
+  vars_files:
+    - vars/secrets.yml
+  tasks:
+    -
+      name: install package rsa
+      ansible.builtin.apt:
+        name: easy-rsa=3.0.8-1ubuntu1
+        state: present
+
+    -
+      name: set config on var.example country
+      ansible.builtin.lineinfile:
+        path: /usr/share/easy-rsa/vars.example
+        regexp: '^#?set_var EASYRSA_REQ_COUNTRY\s+'
+        line: 'set_var EASYRSA_REQ_COUNTRY "RUS"'
+        state: present
+
+    -
+      name: set config on var.example province
+      ansible.builtin.lineinfile:
+        path: /usr/share/easy-rsa/vars.example
+        regexp: '^#?set_var EASYRSA_REQ_PROVINCE\s+'
+        line: 'set_var EASYRSA_REQ_PROVINCE "Yakutsk"'
+        state: present
+
+    -
+      name: set config on var.example city
+      ansible.builtin.lineinfile:
+        path: /usr/share/easy-rsa/vars.example
+        regexp: '^#?set_var EASYRSA_REQ_CITY\s+'
+        line: 'set_var EASYRSA_REQ_CITY "Yakutsk City"'
+        state: present
+
+    -
+      name: set config on var.example org
+      ansible.builtin.lineinfile:
+        path: /usr/share/easy-rsa/vars.example
+        regexp: '^#?set_var EASYRSA_REQ_ORG\s+'
+        line: 'set_var EASYRSA_REQ_ORG "whyorg"'
+        state: present
+
+    -
+      name: set config on var.example email
+      ansible.builtin.lineinfile:
+        path: /usr/share/easy-rsa/vars.example
+        regexp: '^#?set_var EASYRSA_REQ_EMAIL\s+'
+        line: 'set_var EASYRSA_REQ_EMAIL "whydmitriy@gmail.com"'
+        state: present
+
+    -
+      name: set config on var.example ou
+      ansible.builtin.lineinfile:
+        path: /usr/share/easy-rsa/vars.example
+        regexp: '^#?set_var EASYRSA_REQ_OU\s+'
+        line: 'set_var EASYRSA_REQ_OU "LLC"'
+        state: present
+
+    -
+      name: set config on var.example algo
+      ansible.builtin.lineinfile:
+        path: /usr/share/easy-rsa/vars.example
+        regexp: '^#?set_var EASYRSA_ALGO\s+'
+        line: 'set_var EASYRSA_ALGO ec'
+        state: present
+
+    -
+      name: set config on var.example digest
+      ansible.builtin.lineinfile:
+        path: /usr/share/easy-rsa/vars.example
+        regexp: '^#?set_var EASYRSA_DIGEST\s+'
+        line: 'set_var EASYRSA_DIGEST "sha512"'
+        state: present
+
+    -
+      name: rename vars.example to vars
+      ansible.builtin.file:
+        src: /usr/share/easy-rsa/vars.example
+        dest: /usr/share/easy-rsa/vars
+        state: hard
+
+    -
+      name: run easy-rsa init-pki
+      ansible.builtin.command: ./easyrsa init-pki
+      args:
+        chdir: /usr/share/easy-rsa
+      become: true
+
+    -
+      name: run easy-rsa build-ca
+      ansible.builtin.command: ./easyrsa build-ca
+      args:
+        chdir: /usr/share/easy-rsa
+        stdin: "{{ ca_password }}\n{{ ca_password }}\n{{ ca_name }}"
+      become: true
+      no_log: true
+
+        
+        

@@ -71,7 +71,14 @@
       name: check iptables
       ansible.builtin.apt:
         name: iptables
-        state: enabled
+        state: present
+        update_cache: yes
+
+    -
+      name: install iptables-persistent
+      ansible.builtin.apt:
+        name: iptables-persistent
+        state: present
 
     -
       name: allow output on lo
