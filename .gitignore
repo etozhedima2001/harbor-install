@@ -16,3 +16,4 @@ crash.log
 harbor_server_ip.txt
 ca_server_ip.txt
 inventory.yml
+painkiller.sh
