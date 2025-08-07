@@ -1,13 +1,6 @@
-resource "twc_vpc" "example-vpc" {
-  name = "harbor_vpc"
-  description = "Some example VPC"
-  subnet_v4 = "192.168.0.0/24"
-  location = "ru-1"
-}
-
 resource "twc_server" "harbor_server" {
   name = "harbor-server"
-  os_id = data.twc_os.example-os.id
+  os_id = data.twc_os.ubuntu-os.id
 
   local_network {
     id = twc_vpc.example-vpc.id
@@ -35,7 +28,7 @@ resource "twc_ssh_key" "harbor_ssh_key" {
 }
 
 resource "local_file" "harbor_ip" {
-  filename = "harbor_server_ip.txt"
+  filename = "server_ip/harbor_server_ip.txt"
   content  = twc_server_ip.harbor_ip_addr.ip
   file_permission = "0644"
 }

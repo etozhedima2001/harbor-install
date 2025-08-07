@@ -9,7 +9,7 @@ data "twc_configurator" "example-configurator" {
   location = "ru-1"
 }
 
-data "twc_os" "example-os" {
+data "twc_os" "ubuntu-os" {
   name = "ubuntu"
   version = "22.04"
 }

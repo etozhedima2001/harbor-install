@@ -1,6 +1,6 @@
 resource "twc_server" "ca_server" {
   name = "ca-server"
-  os_id = data.twc_os.example-os.id
+  os_id = data.twc_os.ubuntu-os.id
 
   local_network {
     id = twc_vpc.example-vpc.id
@@ -28,7 +28,7 @@ resource "twc_ssh_key" "ca_ssh_key" {
 }
 
 resource "local_file" "ca_ip" {
-  filename = "ca_server_ip.txt"
+  filename = "server_ip/ca_server_ip.txt"
   content  = twc_server_ip.ca_ip_addr.ip
   file_permission = "0644"
 }
