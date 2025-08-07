@@ -82,12 +82,12 @@
         dest: /usr/share/easy-rsa/vars
         state: hard
 
-    -
-      name: run easy-rsa init-pki
-      ansible.builtin.command: ./easyrsa init-pki
-      args:
-        chdir: /usr/share/easy-rsa
-      become: true
+ #   -
+  #    name: run easy-rsa init-pki
+   #   ansible.builtin.command: ./easyrsa init-pki
+    #  args:
+     #   chdir: /usr/share/easy-rsa
+      #become: true
 
     -
       name: run easy-rsa build-ca
@@ -96,7 +96,7 @@
         chdir: /usr/share/easy-rsa
         stdin: "{{ ca_password }}\n{{ ca_password }}\n{{ ca_name }}"
       become: true
-      no_log: true
+      #no_log: true
 
         
         
