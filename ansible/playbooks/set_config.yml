@@ -1,4 +1,48 @@
 -
+  name: create user harbor
+  hosts: harbor-server
+  become: true
+  vars_files:
+    - vars/secrets.yml
+  tasks:
+    -
+      name: create user
+      ansible.builtin.user:
+        name: harbor-admin
+        groups: sudo
+        shell: /bin/bash
+        password: "{{ harbor_password }}"
+
+    -
+      name: configure passwordless sudo for harbor-admin
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^harbor-admin'
+        line: 'harbor-admin ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+-
+  name: create user easyrsa
+  hosts: ca-server
+  become: true
+  tasks:
+    -
+      name: create user
+      ansible.builtin.user:
+        name: ca-admin
+        groups: sudo
+        shell: /bin/bash
+        password: "{{ ca_password }}"
+    -
+      name: configure passwordless sudo for ca-admin
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: '^ca-admin'
+        line: 'ca-admin ALL=(ALL) NOPASSWD: ALL'
+        validate: 'visudo -cf %s'
+
+-
   name: rename server harbor
   hosts: harbor-server
   tasks:
@@ -9,7 +53,7 @@
 
 -
   name: rename server ca
-  hosts: harbor-server
+  hosts: ca-server
   tasks:
     -
       name: set new name
@@ -40,15 +84,22 @@
   hosts: all
   become: true
   tasks:
-    # -
-    #   name: change ssh port
-    #   ansible.builtin.lineinfile:
-    #     path: /etc/ssh/sshd_config
-    #     regexp: '^#?Port\s+'
-    #     line: 'Port 1871'
-    #     state: present
-    #     backup: yes
+    -
+      name: change ssh port
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Port\s+'
+        line: 'Port 1871'
+        state: present
+        backup: yes
 
+    -
+      name: disable root login
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^PermitRootLogin'
+        line: 'PermitRootLogin no'
+        state: present
     -
       name: enabe publick key authentication
       ansible.builtin.lineinfile:
@@ -166,7 +217,7 @@
       ansible.builtin.iptables:
         chain: INPUT
         protocol: tcp
-        destination_port: 22
+        destination_port: 1871
         jump: ACCEPT
         comment: "allow ssh"
         state: present
