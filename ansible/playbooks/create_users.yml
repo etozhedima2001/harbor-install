@@ -1,0 +1,20 @@
+-
+  name: create user harbor
+  hosts: harbor-server
+  become: true
+  tasks:
+    -
+      name: create user
+      ansible.builtin.user:
+        name: harbor
+        shell: /bin/bash
+-
+  name: create user easyrsa
+  hosts: ca-server
+  become: true
+  tasks:
+    -
+      name: create user
+      ansible.builtin.user:
+        name: easyrsa
+        shell: /bin/bash
