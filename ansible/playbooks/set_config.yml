@@ -1,4 +1,22 @@
 -
+  name: rename server harbor
+  hosts: harbor-server
+  tasks:
+    -
+      name: set new name
+      ansible.builtin.hostname:
+        name: harbor-server
+
+-
+  name: rename server ca
+  hosts: harbor-server
+  tasks:
+    -
+      name: set new name
+      ansible.builtin.hostname:
+        name: ca-server
+
+-
   name: disable ipv6
   hosts: all
   become: true
@@ -22,14 +40,14 @@
   hosts: all
   become: true
   tasks:
-    -
-      name: change ssh port
-      ansible.builtin.lineinfile:
-        path: /etc/ssh/sshd_config
-        regexp: '^#?Port\s+'
-        line: 'Port 1871'
-        state: present
-        backup: yes
+    # -
+    #   name: change ssh port
+    #   ansible.builtin.lineinfile:
+    #     path: /etc/ssh/sshd_config
+    #     regexp: '^#?Port\s+'
+    #     line: 'Port 1871'
+    #     state: present
+    #     backup: yes
 
     -
       name: enabe publick key authentication
@@ -148,7 +166,7 @@
       ansible.builtin.iptables:
         chain: INPUT
         protocol: tcp
-        destination_port: 1871
+        destination_port: 22
         jump: ACCEPT
         comment: "allow ssh"
         state: present
