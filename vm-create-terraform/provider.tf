@@ -5,6 +5,12 @@ terraform {
         }
     }
     required_version = ">= 1.12.2"
+
+    backend "local" {
+      path = "tfst_files/terraform.tfstate"
+      #backup = "tfst_files/terraform"
+    }
+    
 }
 
 
