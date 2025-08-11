@@ -3,7 +3,7 @@
   hosts: harbor-server
   become: true
   vars_files:
-    - vars/secrets.yml
+    - ../vars/secrets.yml
   tasks:
     -
       name: create user
@@ -12,6 +12,7 @@
         groups: sudo
         shell: /bin/bash
         password: "{{ harbor_password }}"
+        state: present
 
     -
       name: configure passwordless sudo for harbor-admin
@@ -21,10 +22,22 @@
         regexp: '^harbor-admin'
         line: 'harbor-admin ALL=(ALL) NOPASSWD: ALL'
         validate: 'visudo -cf %s'
+
+    -
+      name: copy ssh 
+      ansible.builtin.copy:
+        src: /root/.ssh/authorized_keys
+        dest: /home/harbor-admin/.ssh/authorized_keys
+        owner: harbor-admin
+        group: harbor-admin
+        mode: 0600
+        remote_src: true
 -
   name: create user easyrsa
   hosts: ca-server
   become: true
+  vars_files:
+    - ../vars/secrets.yml
   tasks:
     -
       name: create user
@@ -33,6 +46,7 @@
         groups: sudo
         shell: /bin/bash
         password: "{{ ca_password }}"
+        state: present
     -
       name: configure passwordless sudo for ca-admin
       ansible.builtin.lineinfile:
@@ -42,6 +56,15 @@
         line: 'ca-admin ALL=(ALL) NOPASSWD: ALL'
         validate: 'visudo -cf %s'
 
+    -
+      name: copy ssh
+      ansible.builtin.copy:
+        src: /root/.ssh/authorized_keys
+        dest: /home/ca-admin/.ssh/authorized_keys
+        owner: ca-admin
+        group: ca-admin
+        mode: 0600
+        remote_src: true
 -
   name: rename server harbor
   hosts: harbor-server
