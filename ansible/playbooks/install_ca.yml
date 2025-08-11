@@ -3,18 +3,53 @@
   hosts: ca-server
   become: true
   vars_files:
-    - vars/secrets.yml
+    - ../vars/secrets.yml
   tasks:
+    -
+      name: prepare remote dir
+      ansible.builtin.file:
+        path: "{{ remote_dir }}"
+        state: directory
+        owner: ca-admin
+        group: ca-admin
+        mode: '0755'
     -
       name: install package rsa
       ansible.builtin.apt:
-        name: easy-rsa=3.0.8-1ubuntu1
+        name: "{{ item }}"
         state: present
+        update_cache: true
+      loop:
+        - easy-rsa=3.0.8-1ubuntu1
+        - python3-pexpect
+        - acl
+        - rsync
+        - tree
 
+    -
+      name: copy easyrsa files to user dir
+      ansible.builtin.copy:
+        src: /usr/share/easy-rsa
+        dest: "{{ remote_dir }}"
+        remote_src: true
+        owner: ca-admin
+        group: ca-admin
+        mode: '0644'
+
+    -
+      name: set permission
+      ansible.builtin.file:
+        path: "{{ remote_dir }}/easy-rsa"
+        state: directory
+        owner: ca-admin
+        group: ca-admin
+        mode: '0755'
+        recurse: true
+        
     -
       name: set config on var.example country
       ansible.builtin.lineinfile:
-        path: /usr/share/easy-rsa/vars.example
+        path: "{{ remote_dir }}/easy-rsa/vars.example"
         regexp: '^#?set_var EASYRSA_REQ_COUNTRY\s+'
         line: 'set_var EASYRSA_REQ_COUNTRY "RUS"'
         state: present
@@ -22,7 +57,7 @@
     -
       name: set config on var.example province
       ansible.builtin.lineinfile:
-        path: /usr/share/easy-rsa/vars.example
+        path: "{{ remote_dir }}/easy-rsa/vars.example"
         regexp: '^#?set_var EASYRSA_REQ_PROVINCE\s+'
         line: 'set_var EASYRSA_REQ_PROVINCE "Yakutsk"'
         state: present
@@ -30,7 +65,7 @@
     -
       name: set config on var.example city
       ansible.builtin.lineinfile:
-        path: /usr/share/easy-rsa/vars.example
+        path: "{{ remote_dir }}/easy-rsa/vars.example"
         regexp: '^#?set_var EASYRSA_REQ_CITY\s+'
         line: 'set_var EASYRSA_REQ_CITY "Yakutsk City"'
         state: present
@@ -38,7 +73,7 @@
     -
       name: set config on var.example org
       ansible.builtin.lineinfile:
-        path: /usr/share/easy-rsa/vars.example
+        path: "{{ remote_dir }}/easy-rsa/vars.example"
         regexp: '^#?set_var EASYRSA_REQ_ORG\s+'
         line: 'set_var EASYRSA_REQ_ORG "whyorg"'
         state: present
@@ -46,7 +81,7 @@
     -
       name: set config on var.example email
       ansible.builtin.lineinfile:
-        path: /usr/share/easy-rsa/vars.example
+        path: "{{ remote_dir }}/easy-rsa/vars.example"
         regexp: '^#?set_var EASYRSA_REQ_EMAIL\s+'
         line: 'set_var EASYRSA_REQ_EMAIL "whydmitriy@gmail.com"'
         state: present
@@ -54,7 +89,7 @@
     -
       name: set config on var.example ou
       ansible.builtin.lineinfile:
-        path: /usr/share/easy-rsa/vars.example
+        path: "{{ remote_dir }}/easy-rsa/vars.example"
         regexp: '^#?set_var EASYRSA_REQ_OU\s+'
         line: 'set_var EASYRSA_REQ_OU "LLC"'
         state: present
@@ -62,7 +97,7 @@
     -
       name: set config on var.example algo
       ansible.builtin.lineinfile:
-        path: /usr/share/easy-rsa/vars.example
+        path: "{{ remote_dir }}/easy-rsa/vars.example"
         regexp: '^#?set_var EASYRSA_ALGO\s+'
         line: 'set_var EASYRSA_ALGO ec'
         state: present
@@ -70,33 +105,14 @@
     -
       name: set config on var.example digest
       ansible.builtin.lineinfile:
-        path: /usr/share/easy-rsa/vars.example
+        path: "{{ remote_dir }}/easy-rsa/vars.example"
         regexp: '^#?set_var EASYRSA_DIGEST\s+'
         line: 'set_var EASYRSA_DIGEST "sha512"'
         state: present
 
     -
       name: rename vars.example to vars
-      ansible.builtin.file:
-        src: /usr/share/easy-rsa/vars.example
-        dest: /usr/share/easy-rsa/vars
-        state: hard
-
- #   -
-  #    name: run easy-rsa init-pki
-   #   ansible.builtin.command: ./easyrsa init-pki
-    #  args:
-     #   chdir: /usr/share/easy-rsa
-      #become: true
-
-    -
-      name: run easy-rsa build-ca
-      ansible.builtin.command: ./easyrsa build-ca
-      args:
-        chdir: /usr/share/easy-rsa
-        stdin: "{{ ca_password }}\n{{ ca_password }}\n{{ ca_name }}"
-      become: true
-      #no_log: true
-
-        
-        
+      ansible.builtin.command:
+        cmd: "mv {{ remote_dir }}/easy-rsa/vars.example {{ remote_dir }}/easy-rsa/vars"
+        creates: "{{ remote_dir }}/easy-rsa/vars"
+ 
