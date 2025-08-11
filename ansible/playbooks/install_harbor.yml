@@ -1,8 +1,20 @@
 -
   name: install harbor
   hosts: harbor-server
+  vars_files:
+    - ../vars/secrets.yml
   become: true
   tasks:
+    -
+      name: prepare dir
+      ansible.builtin.file:
+        path: "{{ harbor_pwd }}"
+        state: directory
+        owner: harbor-admin
+        group: harbor-admin
+        mode:  '0755'
+        recurse: true
+
     -
       name: download tar
       ansible.builtin.get_url:
@@ -12,7 +24,7 @@
       name: unzip tar
       ansible.builtin.unarchive:
         src: "/tmp/harbor-offline-installer-v2.13.2.tgz"
-        dest: "/tmp"
+        dest: "/home/harbor-admin"
         remote_src: yes
 
     -
@@ -20,6 +32,61 @@
       ansible.builtin.file:
         path: "/tmp/harbor-offline-installer-v2.13.2.tgz"
         state: absent
+    -
+      name: mkdir certs
+      ansible.builtin.file:
+        path: /etc/harbor/certs/
+        state: directory 
+    -
+      name: deploy certs
+      ansible.builtin.copy:
+        src: ../crt/{{ item.src }}
+        dest: /etc/harbor/certs/{{ item.dest }}
+        mode: "{{ item.mode }}"
+      loop:
+        - { src: "{{ fullchain_pwd }}", dest: "harbor.crt", mode: "0600" }
+        - { src: "{{ key_pwd }}", dest: "harbor.key", mode: "0600" }
 
-        
-        
+    -
+      name: update hostname
+      ansible.builtin.lineinfile:
+        path: "{{ harbor_pwd }}/harbor.yml.tmpl"
+        regexp: '^hostname:\s+'
+        line: 'hostname: {{ harbor_domen }}'
+        state: present
+
+    -
+      name: update https port
+      ansible.builtin.lineinfile:
+        path: "{{ harbor_pwd }}/harbor.yml.tmpl"
+        regexp: '^\s+port: 443$'
+        line: '  port: 8675'
+        state: present
+
+    -
+      name: add cert
+      ansible.builtin.lineinfile:
+        path: "{{ harbor_pwd }}/harbor.yml.tmpl"
+        regexp: '^\s+certificate: /your/certificate/path$'
+        line: '  certificate: /etc/harbor/certs/harbor.crt'
+        state: present
+
+    -
+      name: add key
+      ansible.builtin.lineinfile:
+        path: "{{ harbor_pwd }}/harbor.yml.tmpl"
+        regexp: '^\s+private_key: /your/private/key/path$'
+        line: '  private_key: /etc/harbor/certs/harbor.key'
+        state: present
+
+    -
+      name: rename harbor yaml
+      ansible.builtin.command:
+        cmd: "mv {{ harbor_pwd }}/harbor.yml.tmpl {{ harbor_pwd }}/harbor.yml"
+        creates: "{{ harbor_pwd }}/harbor.yml"
+
+    -
+      name: install
+      ansible.builtin.shell:
+        cmd: ./install.sh
+        chdir: /home/harbor-admin/harbor/
