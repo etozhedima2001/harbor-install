@@ -1,0 +1,56 @@
+-
+  name: Generate Harbor Certificate
+  hosts: ca-server
+  vars_files:
+    - ../vars/secrets.yml
+  tasks:
+    -
+      name: init pki
+      ansible.builtin.command:
+        cmd: ./easyrsa init-pki
+        chdir: "{{ remote_dir }}/easy-rsa"
+        creates: "{{ remote_dir }}/easy-rsa/pki"
+
+    -
+      name: stat ca.crt
+      ansible.builtin.stat:
+        path: "{{ remote_dir }}/easy-rsa/pki/ca.crt"
+      register: stat_ca_cert
+        
+    -
+      name: build ca (non interactive)
+      ansible.builtin.command: |
+        ./easyrsa --batch build-ca nopass 
+      args:
+        chdir: "{{ remote_dir }}/easy-rsa"
+      when: not stat_ca_cert.stat.exists
+
+    -
+      name: generate harbor cert
+      ansible.builtin.command:
+        cmd: ./easyrsa --batch --req-cn={{ harbor_domen }} gen-req {{ harbor_domen }} nopass
+        chdir: "{{ remote_dir }}/easy-rsa"
+        creates: "{{ remote_dir }}/easy-rsa/pki/issued/{{ harbor_domen }}.req"
+    -
+      name: sign harbor cert
+      ansible.builtin.command:
+        cmd: ./easyrsa --batch --subject-alt-name="DNS:{{ harbor_domen }}" sign-req server {{ harbor_domen }}
+        chdir: "{{ remote_dir }}/easy-rsa"
+        creates: "{{ remote_dir }}/easy-rsa/pki/issued/{{ harbor_domen }}.crt"
+    -
+      name: ensure cert dir
+      ansible.builtin.file:
+        path: "{{ remote_dir }}/../certs"
+        state: directory
+        owner: ca-admin
+        group: ca-admin
+        mode: "0755" 
+    
+    -
+      name: create fullchain
+      ansible.builtin.shell: |
+        cat {{ remote_dir }}/easy-rsa/pki/issued/{{ harbor_domen }}.crt \
+            {{ remote_dir }}/easy-rsa/pki/ca.crt > {{ remote_dir }}/../certs/harbor-fullchain.crt
+      args:
+        creates: "{{ remote_dir }}/../certs/harbor-fullchain.crt"
+
